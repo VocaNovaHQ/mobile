@@ -1,0 +1,99 @@
+import {
+  ArrowRight,
+  BarChart3,
+  Bell,
+  Bookmark,
+  Brain,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Clock,
+  Edit3,
+  Filter,
+  Flame,
+  Globe,
+  Grid3x3,
+  Heart,
+  Home,
+  Layers,
+  List as ListIcon,
+  Plus,
+  RefreshCw,
+  Search,
+  Settings,
+  Share2,
+  SortAsc,
+  Sparkles,
+  Trophy,
+  User,
+  Volume2,
+  X,
+  Zap,
+  type LucideIcon,
+} from "lucide-react-native";
+
+const ICONS = {
+  home: Home,
+  cards: Layers,
+  layers: Layers,
+  schedule: Clock,
+  clock: Clock,
+  stats: BarChart3,
+  user: User,
+  search: Search,
+  bookmark: Bookmark,
+  flame: Flame,
+  speaker: Volume2,
+  "volume-2": Volume2,
+  plus: Plus,
+  check: Check,
+  x: X,
+  "chevron-right": ChevronRight,
+  chevR: ChevronRight,
+  "chevron-left": ChevronLeft,
+  "chevron-down": ChevronDown,
+  "chevron-up": ChevronUp,
+  filter: Filter,
+  sort: SortAsc,
+  sparkles: Sparkles,
+  trophy: Trophy,
+  zap: Zap,
+  bolt: Zap,
+  brain: Brain,
+  settings: Settings,
+  bell: Bell,
+  list: ListIcon,
+  grid: Grid3x3,
+  "refresh-cw": RefreshCw,
+  flip: RefreshCw,
+  refresh: RefreshCw,
+  "arrow-right": ArrowRight,
+  "share-2": Share2,
+  share: Share2,
+  "edit-3": Edit3,
+  edit: Edit3,
+  heart: Heart,
+  globe: Globe,
+} as const;
+
+export type IconName = keyof typeof ICONS;
+
+export type IconProps = {
+  name: IconName;
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+};
+
+export function Icon({
+  name,
+  size = 22,
+  color = "#0B1220",
+  strokeWidth = 1.8,
+}: IconProps) {
+  const Component: LucideIcon = ICONS[name];
+  if (!Component) return null;
+  return <Component size={size} color={color} strokeWidth={strokeWidth} />;
+}
