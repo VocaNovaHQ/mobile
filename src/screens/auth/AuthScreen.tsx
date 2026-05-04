@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Alert, Platform, ScrollView, Text, View } from "react-native";
+import { Alert, Platform, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import * as AppleAuthentication from "expo-apple-authentication";
-import { Button } from "../../components";
+import { GoogleSignInButton, Icon } from "../../components";
+import type { IconName } from "../../components/Icon";
 import { signInWithApple, signInWithGoogle } from "../../lib/auth";
-import { colors } from "../../theme/tokens";
+import { colors, shadow } from "../../theme/tokens";
 
 export function AuthScreen() {
   const [loading, setLoading] = useState(false);
@@ -37,62 +39,137 @@ export function AuthScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      {/* 상단 컨텐츠 — 화면이 작으면 스크롤 */}
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 28, paddingTop: 60 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 18,
-            backgroundColor: colors.blue[500],
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 24,
-          }}
-        >
-          <Text style={{ color: "#fff", fontSize: 32, fontWeight: "800" }}>
-            V
-          </Text>
-        </View>
-        <Text
-          style={{
-            fontSize: 36,
-            fontWeight: "800",
-            color: colors.ink[900],
-            letterSpacing: -1,
-            lineHeight: 42,
-          }}
-        >
-          VocaNova
-        </Text>
-        <Text
-          style={{
-            marginTop: 12,
-            fontSize: 16,
-            color: colors.ink[500],
-            fontWeight: "500",
-            letterSpacing: -0.2,
-            lineHeight: 24,
-          }}
-        >
-          크롬에서 모은 단어를{"\n"}매일 30개씩 정복하세요.
-        </Text>
-
-        <View style={{ marginTop: 36, gap: 14 }}>
-          <Bullet text="크롬 익스텐션과 자동 동기화" />
-          <Bullet text="간격 반복(SRS)으로 효율적 암기" />
-          <Bullet text="플래시카드로 즐겁게 학습" />
-        </View>
-      </ScrollView>
-
-      {/* 하단 버튼 — 항상 SafeArea 위에 고정 */}
       <View
         style={{
-          paddingHorizontal: 28,
-          paddingTop: 16,
+          flex: 1,
+          paddingHorizontal: 24,
+          paddingTop: 28,
+        }}
+      >
+        {/* Brand */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 28,
+          }}
+        >
+          <LinearGradient
+            colors={[colors.blue[400], colors.blue[600]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              alignItems: "center",
+              justifyContent: "center",
+              ...shadow.primary,
+            }}
+          >
+            <Text
+              style={{
+                color: "#fff",
+                fontSize: 24,
+                fontWeight: "800",
+                letterSpacing: -0.5,
+              }}
+            >
+              V
+            </Text>
+          </LinearGradient>
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: "800",
+              color: colors.ink[900],
+              letterSpacing: -0.6,
+            }}
+          >
+            VocaNova
+          </Text>
+        </View>
+
+        {/* Headline */}
+        <Text
+          style={{
+            fontSize: 34,
+            fontWeight: "800",
+            color: colors.ink[900],
+            letterSpacing: -1.2,
+            lineHeight: 40,
+          }}
+        >
+          크롬에서 모은 단어,{"\n"}
+          <Text style={{ color: colors.blue[500] }}>손 안에서 정복.</Text>
+        </Text>
+        <Text
+          style={{
+            marginTop: 14,
+            fontSize: 15,
+            color: colors.ink[600],
+            fontWeight: "500",
+            letterSpacing: -0.2,
+            lineHeight: 22,
+          }}
+        >
+          웹에서 발견한 영단어를 한 번의 클릭으로 저장하고{"\n"}앱에서
+          플래시카드로 완벽히 외워보세요.
+        </Text>
+
+        {/* Sync hero — 크롬 익스텐션 강조 */}
+        <LinearGradient
+          colors={[colors.blue[500], colors.blue[700]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            marginTop: 26,
+            borderRadius: 22,
+            padding: 22,
+            paddingVertical: 22,
+            ...shadow.primary,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 18,
+            }}
+          >
+            <DeviceTile icon="chrome" label="Chrome" sublabel="익스텐션" />
+            <SyncBridge />
+            <DeviceTile icon="smartphone" label="VocaNova" sublabel="iPhone" />
+          </View>
+          <View
+            style={{
+              borderTopWidth: 1,
+              borderTopColor: "rgba(255,255,255,0.18)",
+              paddingTop: 14,
+            }}
+          >
+            <Text
+              style={{
+                color: "#fff",
+                fontSize: 14,
+                fontWeight: "800",
+                textAlign: "center",
+                letterSpacing: -0.2,
+              }}
+            >
+              크롬 익스텐션이 핵심입니다
+            </Text>
+          </View>
+        </LinearGradient>
+      </View>
+
+      {/* Bottom CTA */}
+      <View
+        style={{
+          paddingHorizontal: 24,
+          paddingTop: 14,
           paddingBottom: 16,
           gap: 10,
           backgroundColor: "#fff",
@@ -100,15 +177,7 @@ export function AuthScreen() {
           borderTopColor: colors.ink[100],
         }}
       >
-        <Button
-          full
-          size="lg"
-          variant="primary"
-          onPress={handleGoogle}
-          disabled={loading}
-        >
-          {loading ? "잠시만요…" : "Google로 시작하기"}
-        </Button>
+        <GoogleSignInButton onPress={handleGoogle} disabled={loading} />
         {appleAvailable ? (
           <AppleAuthentication.AppleAuthenticationButton
             buttonType={
@@ -118,7 +187,7 @@ export function AuthScreen() {
               AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
             }
             cornerRadius={14}
-            style={{ width: "100%", height: 56 }}
+            style={{ width: "100%", height: 52 }}
             onPress={handleApple}
           />
         ) : null}
@@ -128,9 +197,10 @@ export function AuthScreen() {
             color: colors.ink[400],
             textAlign: "center",
             lineHeight: 16,
+            marginTop: 4,
           }}
         >
-          계속하면 서비스 이용약관과 개인정보처리방침에 동의하는 것으로
+          계속하면 서비스 이용약관과 개인정보처리방침에{"\n"}동의하는 것으로
           간주됩니다.
         </Text>
       </View>
@@ -138,20 +208,155 @@ export function AuthScreen() {
   );
 }
 
-function Bullet({ text }: { text: string }) {
+// ─── Components ──────────────────────────────────────
+
+function DeviceTile({
+  icon,
+  label,
+  sublabel,
+}: {
+  icon: IconName;
+  label: string;
+  sublabel: string;
+}) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+    <View style={{ alignItems: "center", gap: 6, width: 78 }}>
       <View
         style={{
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: colors.blue[500],
+          width: 56,
+          height: 56,
+          borderRadius: 16,
+          backgroundColor: "rgba(255,255,255,0.18)",
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.25)",
+          alignItems: "center",
+          justifyContent: "center",
         }}
-      />
-      <Text style={{ fontSize: 14, color: colors.ink[700], fontWeight: "500" }}>
-        {text}
+      >
+        <Icon name={icon} size={28} color="#fff" strokeWidth={2} />
+      </View>
+      <Text
+        style={{
+          color: "#fff",
+          fontSize: 12,
+          fontWeight: "800",
+          letterSpacing: -0.2,
+        }}
+      >
+        {label}
       </Text>
+      <Text
+        style={{
+          color: "rgba(255,255,255,0.7)",
+          fontSize: 10,
+          fontWeight: "600",
+          letterSpacing: 0.2,
+          marginTop: -2,
+        }}
+      >
+        {sublabel}
+      </Text>
+    </View>
+  );
+}
+
+function SyncBridge() {
+  return (
+    <View style={{ alignItems: "center", flex: 1, gap: 6 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 4,
+        }}
+      >
+        <Dot />
+        <Dot />
+        <Dot />
+        <Icon
+          name="arrow-right"
+          size={16}
+          color="rgba(255,255,255,0.95)"
+          strokeWidth={2.6}
+        />
+      </View>
+      <Text
+        style={{
+          color: "rgba(255,255,255,0.95)",
+          fontSize: 10,
+          fontWeight: "800",
+          letterSpacing: 0.6,
+        }}
+      >
+        SYNC
+      </Text>
+    </View>
+  );
+}
+
+function Dot() {
+  return (
+    <View
+      style={{
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: "rgba(255,255,255,0.7)",
+      }}
+    />
+  );
+}
+
+function Feature({
+  icon,
+  title,
+  desc,
+}: {
+  icon: IconName;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+      <View
+        style={{
+          width: 38,
+          height: 38,
+          borderRadius: 11,
+          backgroundColor: colors.blue[50],
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Icon
+          name={icon}
+          size={18}
+          color={colors.blue[500]}
+          strokeWidth={2.2}
+        />
+      </View>
+      <View style={{ flex: 1, paddingTop: 1 }}>
+        <Text
+          style={{
+            fontSize: 14.5,
+            fontWeight: "700",
+            color: colors.ink[900],
+            letterSpacing: -0.2,
+          }}
+        >
+          {title}
+        </Text>
+        <Text
+          style={{
+            fontSize: 12.5,
+            color: colors.ink[500],
+            lineHeight: 18,
+            marginTop: 2,
+          }}
+        >
+          {desc}
+        </Text>
+      </View>
     </View>
   );
 }
