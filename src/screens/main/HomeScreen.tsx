@@ -18,6 +18,7 @@ import {
   Icon,
   Ring,
   SectionHeader,
+  WordLookupCard,
 } from "../../components";
 import { colors } from "../../theme/tokens";
 import { loadWords } from "../../lib/dataSource";
@@ -168,6 +169,13 @@ export function HomeScreen() {
             <Card padding={20}>
               <TodaysMission words={words ?? []} onStart={() => navigation.navigate("Study", {})} />
             </Card>
+          </View>
+        ) : null}
+
+        {/* In-app word lookup */}
+        {!isLoading && !error ? (
+          <View style={{ paddingHorizontal: 20, paddingBottom: 16 }}>
+            <WordLookupCard onAdded={fetchData} />
           </View>
         ) : null}
 
