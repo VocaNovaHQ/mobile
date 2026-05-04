@@ -21,14 +21,7 @@ import {
 } from "../../components";
 import { colors } from "../../theme/tokens";
 import { loadWords } from "../../lib/dataSource";
-import {
-  fetchStats,
-  loadThisWeekActivity,
-  thisWeekDayKeys,
-  kstTodayKey,
-  type StatsSummary,
-} from "../../lib/stats";
-import { SAMPLE_FRIENDS } from "../../data/sample";
+import { fetchStats, type StatsSummary } from "../../lib/stats";
 import { useCurrentUser } from "../../store/auth";
 import type { RootStackParamList } from "../../navigation/types";
 import type { Word } from "../../types/word";
@@ -42,19 +35,16 @@ export function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<StatsSummary | null>(null);
-  const [activeDates, setActiveDates] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     try {
       setError(null);
-      const [w, s, a] = await Promise.all([
+      const [w, s] = await Promise.all([
         loadWords(),
         fetchStats().catch(() => null),
-        loadThisWeekActivity().catch(() => new Set<string>()),
       ]);
       setWords(w);
       setStats(s);
-      setActiveDates(a);
     } catch (e: any) {
       setError(e?.message ?? "단어를 불러오지 못했습니다");
       setWords([]);
@@ -105,7 +95,6 @@ export function HomeScreen() {
               source={avatarUrl}
             />
           }
-          trailing={<RoundIconButton icon="bell" />}
         />
 
         {isLoading ? (
@@ -116,117 +105,59 @@ export function HomeScreen() {
 
         {/* Streak banner */}
         {!isLoading && !error ? (
-        <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
-          <Card padding={16} style={{ backgroundColor: colors.blue[50], borderColor: "transparent" }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 6,
-                    marginBottom: 6,
-                  }}
-                >
-                  <Icon name="flame" size={18} color={colors.blue[500]} strokeWidth={2.4} />
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "700",
-                      color: colors.blue[600],
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    STREAK
-                  </Text>
-                </View>
+          <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
+            <Card padding={16} style={{ backgroundColor: colors.blue[50], borderColor: "transparent" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 6,
+                }}
+              >
+                <Icon name="flame" size={18} color={colors.blue[500]} strokeWidth={2.4} />
                 <Text
                   style={{
-                    fontSize: 32,
-                    fontWeight: "800",
-                    color: colors.ink[900],
-                    letterSpacing: -1,
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: colors.blue[600],
+                    letterSpacing: 0.5,
                   }}
                 >
-                  {stats?.streak ?? 0}
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "600",
-                      opacity: 0.7,
-                    }}
-                  >
-                    {" "}일
-                  </Text>
+                  STREAK
                 </Text>
+              </View>
+              <Text
+                style={{
+                  fontSize: 32,
+                  fontWeight: "800",
+                  color: colors.ink[900],
+                  letterSpacing: -1,
+                }}
+              >
+                {stats?.streak ?? 0}
                 <Text
-                  numberOfLines={2}
                   style={{
-                    fontSize: 13,
-                    color: colors.ink[600],
-                    marginTop: 4,
+                    fontSize: 16,
+                    fontWeight: "600",
+                    opacity: 0.7,
                   }}
                 >
-                  {streakMessage(stats, activeDates)}
+                  {" "}일
                 </Text>
-              </View>
-
-              <View style={{ flexDirection: "row", gap: 4, flexShrink: 0 }}>
-                {(() => {
-                  const labels = ["월", "화", "수", "목", "금", "토", "일"];
-                  const keys = thisWeekDayKeys();
-                  const today = kstTodayKey();
-                  return labels.map((d, i) => {
-                    const dayKey = keys[i]!;
-                    const done = activeDates.has(dayKey);
-                    const isToday = dayKey === today;
-                    const isFuture = dayKey > today;
-                    return (
-                      <View key={d} style={{ alignItems: "center", gap: 4 }}>
-                        <View
-                          style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: 10,
-                            backgroundColor: done
-                              ? colors.blue[500]
-                              : isFuture
-                                ? colors.ink[100]
-                                : colors.ink[200],
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderWidth: isToday && !done ? 1.5 : 0,
-                            borderColor: colors.blue[500],
-                          }}
-                        >
-                          {done ? (
-                            <Icon name="check" size={12} color="#fff" strokeWidth={3} />
-                          ) : null}
-                        </View>
-                        <Text
-                          style={{
-                            fontSize: 10,
-                            fontWeight: isToday ? "700" : "600",
-                            color: isToday ? colors.blue[600] : colors.ink[500],
-                          }}
-                        >
-                          {d}
-                        </Text>
-                      </View>
-                    );
-                  });
-                })()}
-              </View>
-            </View>
-          </Card>
-        </View>
+              </Text>
+              <Text
+                numberOfLines={2}
+                style={{
+                  fontSize: 13,
+                  color: colors.ink[600],
+                  marginTop: 4,
+                }}
+              >
+                {streakMessage(stats)}
+              </Text>
+            </Card>
+          </View>
         ) : null}
 
         {/* Today's mission — 실제 user_words 기반 통계 */}
@@ -355,62 +286,6 @@ export function HomeScreen() {
           ))}
         </View>
 
-        {/* Friends */}
-        {!isLoading && !error ? (
-        <View>
-        <SectionHeader title="친구와 경쟁" action="전체" />
-        <View style={{ paddingHorizontal: 20, paddingBottom: 30 }}>
-          <Card padding={14}>
-            {SAMPLE_FRIENDS.slice(0, 3).map((f, i) => (
-              <View
-                key={f.name}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 12,
-                  paddingVertical: 8,
-                  paddingHorizontal: 4,
-                  borderBottomWidth: i < 2 ? 0.5 : 0,
-                  borderBottomColor: colors.ink[100],
-                }}
-              >
-                <Text
-                  style={{
-                    width: 22,
-                    fontSize: 13,
-                    fontWeight: "800",
-                    color: i === 0 ? colors.warn : colors.ink[600],
-                  }}
-                >
-                  {f.rank}
-                </Text>
-                <Avatar initial={f.initial} color={f.color} size={32} />
-                <Text
-                  style={{
-                    flex: 1,
-                    fontSize: 14,
-                    fontWeight: "600",
-                    color: colors.ink[900],
-                  }}
-                >
-                  {f.name}
-                  {f.me ? " (나)" : ""}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "700",
-                    color: colors.blue[500],
-                  }}
-                >
-                  {f.xp.toLocaleString()} XP
-                </Text>
-              </View>
-            ))}
-          </Card>
-        </View>
-        </View>
-        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -460,28 +335,6 @@ function MiniStatBox({
   );
 }
 
-function RoundIconButton({ icon }: { icon: any }) {
-  return (
-    <Pressable
-      style={{
-        width: 38,
-        height: 38,
-        borderRadius: 12,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "center",
-        shadowColor: "#0F172A",
-        shadowOpacity: 0.04,
-        shadowOffset: { width: 0, height: 1 },
-        shadowRadius: 2,
-        elevation: 1,
-      }}
-    >
-      <Icon name={icon} size={20} color={colors.ink[700]} />
-    </Pressable>
-  );
-}
-
 function formatToday(): string {
   const d = new Date();
   return d.toLocaleDateString("ko-KR", {
@@ -491,13 +344,9 @@ function formatToday(): string {
   });
 }
 
-function streakMessage(
-  stats: StatsSummary | null,
-  activeDates: Set<string>
-): string {
-  const today = kstTodayKey();
+function streakMessage(stats: StatsSummary | null): string {
   const streak = stats?.streak ?? 0;
-  const todayDone = activeDates.has(today);
+  const todayDone = (stats?.todayReviews ?? 0) > 0;
 
   if (streak === 0) return "오늘 학습을 시작해 볼까요?";
   if (todayDone) {
