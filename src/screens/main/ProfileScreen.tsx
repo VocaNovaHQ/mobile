@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -28,6 +29,26 @@ import type { IconName } from "../../components/Icon";
 import type { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+function confirmSignOut() {
+  Alert.alert(
+    "로그아웃",
+    "정말 로그아웃 하시겠습니까?",
+    [
+      { text: "취소", style: "cancel" },
+      {
+        text: "로그아웃",
+        style: "destructive",
+        onPress: () => {
+          signOut().catch((e) => {
+            Alert.alert("로그아웃 실패", e?.message ?? "다시 시도해주세요.");
+          });
+        },
+      },
+    ],
+    { cancelable: true }
+  );
+}
 type Tab = "profile" | "stats";
 
 export function ProfileScreen() {
@@ -104,27 +125,6 @@ export function ProfileScreen() {
           title={tab === "stats" ? "통계" : "프로필"}
           subtitle={tab === "stats" ? "학습 기록" : undefined}
           big
-          trailing={
-            tab === "profile" ? (
-              <Pressable
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 12,
-                  backgroundColor: "#fff",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  shadowColor: "#0F172A",
-                  shadowOpacity: 0.04,
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowRadius: 2,
-                  elevation: 1,
-                }}
-              >
-                <Icon name="settings" size={20} color={colors.ink[700]} />
-              </Pressable>
-            ) : undefined
-          }
         />
 
         <SegmentedTabs value={tab} onChange={setTab} />
@@ -265,56 +265,7 @@ function ProfileBody({
               <Text style={{ fontSize: 13, color: colors.ink[500], marginTop: 2 }}>
                 {email}
               </Text>
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-                <Chip color={colors.blue[600]} bg={colors.chip} size="sm">
-                  Pro
-                </Chip>
-                <Chip color={colors.warn} bg="#FEF3C7" size="sm">
-                  🔥 12일
-                </Chip>
-              </View>
             </View>
-          </View>
-
-          <View
-            style={{
-              marginTop: 16,
-              paddingTop: 16,
-              borderTopWidth: 0.5,
-              borderTopColor: "rgba(15,23,42,0.05)",
-              flexDirection: "row",
-              gap: 10,
-            }}
-          >
-            {(
-              [
-                { l: "단어", v: "248" },
-                { l: "랭킹", v: "4위" },
-                { l: "총 XP", v: "4.2k" },
-              ] as const
-            ).map((s) => (
-              <View key={s.l} style={{ flex: 1, alignItems: "center" }}>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "800",
-                    color: colors.ink[900],
-                  }}
-                >
-                  {s.v}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 11,
-                    color: colors.ink[500],
-                    fontWeight: "600",
-                    marginTop: 2,
-                  }}
-                >
-                  {s.l}
-                </Text>
-              </View>
-            ))}
           </View>
         </Card>
       </View>
@@ -327,8 +278,7 @@ function ProfileBody({
             value={reminderValue}
             onPress={onReminderPress}
           />
-          <Row icon="bolt" title="복습 일정" onPress={onSchedulePress} />
-          <Row icon="globe" title="언어" value="한국어" last />
+          <Row icon="bolt" title="복습 일정" onPress={onSchedulePress} last />
         </Group>
 
         <Group title="크롬 익스텐션">
@@ -340,26 +290,12 @@ function ProfileBody({
                 연결됨
               </Chip>
             }
-          />
-          <Row icon="sparkles" title="자동 저장 규칙" last />
-        </Group>
-
-        <Group title="계정">
-          <Row icon="user" title="계정 정보" />
-          <Row
-            icon="heart"
-            title="구독 관리"
-            badge={
-              <Chip color={colors.blue[600]} bg={colors.chip} size="sm">
-                Pro
-              </Chip>
-            }
             last
           />
         </Group>
 
         <Pressable
-          onPress={signOut}
+          onPress={confirmSignOut}
           style={{
             marginTop: 4,
             padding: 14,
