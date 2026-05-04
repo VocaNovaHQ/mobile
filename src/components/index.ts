@@ -11,3 +11,4 @@ export { MiniStat, type MiniStatProps } from "./MiniStat";
 export { HighlightedSentence, type HighlightedSentenceProps } from "./HighlightedSentence";
 export { StatsBody, type StatsBodyProps } from "./StatsBody";
 export { GoogleSignInButton, type GoogleSignInButtonProps } from "./GoogleSignInButton";
+export { WordLookupCard, type WordLookupCardProps } from "./WordLookupCard";
