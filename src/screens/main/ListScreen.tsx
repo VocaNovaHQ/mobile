@@ -88,52 +88,60 @@ export function ListScreen() {
             />
             <RoundIconButton
               icon="search"
-              onPress={() => setSearchOpen((v) => !v)}
+              onPress={() =>
+                setSearchOpen((v) => {
+                  const next = !v;
+                  if (!next) setSearch("");
+                  return next;
+                })
+              }
             />
           </>
         }
       />
 
-      {/* Search bar */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-            height: 44,
-            paddingHorizontal: 14,
-            borderRadius: 12,
-            backgroundColor: "#fff",
-            borderWidth: 0.5,
-            borderColor: "rgba(15,23,42,0.06)",
-          }}
-        >
-          <Icon name="search" size={18} color={colors.ink[500]} />
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="단어 검색…"
-            placeholderTextColor={colors.ink[500]}
+      {/* Search bar — 검색 버튼 누를 때만 표시 */}
+      {searchOpen ? (
+        <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 }}>
+          <View
             style={{
-              flex: 1,
-              fontSize: 14,
-              color: colors.ink[900],
-              padding: 0,
-              fontWeight: "500",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              height: 44,
+              paddingHorizontal: 14,
+              borderRadius: 12,
+              backgroundColor: "#fff",
+              borderWidth: 0.5,
+              borderColor: "rgba(15,23,42,0.06)",
             }}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-            autoFocus={searchOpen}
-          />
-          {search ? (
-            <Pressable onPress={() => setSearch("")}>
-              <Icon name="x" size={16} color={colors.ink[400]} />
-            </Pressable>
-          ) : null}
+          >
+            <Icon name="search" size={18} color={colors.ink[500]} />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="단어 검색…"
+              placeholderTextColor={colors.ink[500]}
+              style={{
+                flex: 1,
+                fontSize: 14,
+                color: colors.ink[900],
+                padding: 0,
+                fontWeight: "500",
+              }}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+              autoFocus
+            />
+            {search ? (
+              <Pressable onPress={() => setSearch("")}>
+                <Icon name="x" size={16} color={colors.ink[400]} />
+              </Pressable>
+            ) : null}
+          </View>
         </View>
-      </View>
+      ) : null}
 
       {/* Filter chips */}
       <ScrollView
