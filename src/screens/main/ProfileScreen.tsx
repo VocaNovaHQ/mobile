@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -23,6 +24,11 @@ import {
 import { colors } from "../../theme/tokens";
 import { useCurrentUser } from "../../store/auth";
 import { deleteMyAccount, signOut } from "../../lib/auth";
+import {
+  PRIVACY_POLICY_URL,
+  SUPPORT_URL,
+  TERMS_OF_SERVICE_URL,
+} from "../../lib/legalLinks";
 import { formatReminderTime, loadReminder, type ReminderSettings } from "../../lib/notifications";
 import { fetchStats, type StatsSummary } from "../../lib/stats";
 import type { IconName } from "../../components/Icon";
@@ -332,6 +338,25 @@ function ProfileBody({
                 연결됨
               </Chip>
             }
+            last
+          />
+        </Group>
+
+        <Group title="정책 및 지원">
+          <Row
+            icon="shield"
+            title="개인정보처리방침"
+            onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+          />
+          <Row
+            icon="file-text"
+            title="서비스 이용약관"
+            onPress={() => Linking.openURL(TERMS_OF_SERVICE_URL)}
+          />
+          <Row
+            icon="help-circle"
+            title="고객 지원"
+            onPress={() => Linking.openURL(SUPPORT_URL)}
             last
           />
         </Group>
