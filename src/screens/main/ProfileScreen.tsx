@@ -22,7 +22,7 @@ import {
 } from "../../components";
 import { colors } from "../../theme/tokens";
 import { useCurrentUser } from "../../store/auth";
-import { signOut } from "../../lib/auth";
+import { deleteMyAccount, signOut } from "../../lib/auth";
 import { formatReminderTime, loadReminder, type ReminderSettings } from "../../lib/notifications";
 import { fetchStats, type StatsSummary } from "../../lib/stats";
 import type { IconName } from "../../components/Icon";
@@ -49,14 +49,56 @@ function confirmSignOut() {
     { cancelable: true }
   );
 }
+
+/**
+ * 계정 삭제 — Apple 정책상 인앱 흐름 필수.
+ * 2단계 확인 (1차: 영향 안내, 2차: 최종 확인) 으로 실수 방지.
+ */
+function confirmDeleteAccount() {
+  Alert.alert(
+    "계정 삭제",
+    "계정을 삭제하면 단어장, 학습 기록, 통계 등 모든 데이터가 영구적으로 사라집니다. 이 작업은 되돌릴 수 없습니다.",
+    [
+      { text: "취소", style: "cancel" },
+      {
+        text: "계속",
+        style: "destructive",
+        onPress: () => {
+          Alert.alert(
+            "정말 삭제하시겠습니까?",
+            "마지막 확인입니다. 삭제 후에는 같은 계정으로 다시 가입하더라도 이전 데이터를 복구할 수 없습니다.",
+            [
+              { text: "취소", style: "cancel" },
+              {
+                text: "영구 삭제",
+                style: "destructive",
+                onPress: async () => {
+                  const r = await deleteMyAccount();
+                  if (!r.ok) {
+                    Alert.alert(
+                      "삭제 실패",
+                      r.error ?? "다시 시도해주세요."
+                    );
+                  }
+                  // 성공 시 supabase 세션이 cleared → onAuthStateChange가 AuthScreen으로 자동 전환
+                },
+              },
+            ]
+          );
+        },
+      },
+    ],
+    { cancelable: true }
+  );
+}
 type Tab = "profile" | "stats";
 
 export function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const user = useCurrentUser();
-  const name = user?.user_metadata?.full_name?.split(" ")[0] ?? "지훈";
-  const initial = name.slice(0, 1) || "지";
-  const email = user?.email ?? "demo@vocanova.app";
+  const name = user?.user_metadata?.full_name?.split(" ")[0] ?? "사용자";
+  const initial = name.slice(0, 1) || "U";
+  const email = user?.email ?? "";
 
   const [tab, setTab] = useState<Tab>("profile");
 
@@ -310,6 +352,26 @@ function ProfileBody({
             style={{ fontSize: 14, fontWeight: "700", color: colors.danger }}
           >
             로그아웃
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={confirmDeleteAccount}
+          style={{
+            marginTop: 24,
+            padding: 14,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "600",
+              color: colors.ink[500],
+              textDecorationLine: "underline",
+            }}
+          >
+            계정 삭제
           </Text>
         </Pressable>
       </View>

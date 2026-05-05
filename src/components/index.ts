@@ -12,3 +12,4 @@ export { HighlightedSentence, type HighlightedSentenceProps } from "./Highlighte
 export { StatsBody, type StatsBodyProps } from "./StatsBody";
 export { GoogleSignInButton, type GoogleSignInButtonProps } from "./GoogleSignInButton";
 export { WordLookupCard, type WordLookupCardProps } from "./WordLookupCard";
+export { ErrorBoundary } from "./ErrorBoundary";

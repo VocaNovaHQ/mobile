@@ -10,7 +10,7 @@ import {
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppHeader, Card, Icon, Ring } from "../../components";
+import { AppHeader, Button, Card, Icon, Ring } from "../../components";
 import { colors } from "../../theme/tokens";
 import { loadWords } from "../../lib/dataSource";
 import type { RootStackParamList } from "../../navigation/types";
@@ -31,21 +31,37 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 export function ListScreen() {
   const navigation = useNavigation<Nav>();
   const [words, setWords] = useState<Word[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "grid">("list");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const fetchData = useCallback(() => {
+    setError(null);
+    return loadWords()
+      .then((w) => {
+        setWords(w);
+      })
+      .catch((e: any) => {
+        console.warn("[ListScreen] loadWords failed", e);
+        setError(e?.message ?? "단어를 불러오지 못했습니다");
+      });
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       loadWords()
         .then((w) => {
-          if (active) setWords(w);
+          if (active) {
+            setWords(w);
+            setError(null);
+          }
         })
-        .catch((e) => {
+        .catch((e: any) => {
           console.warn("[ListScreen] loadWords failed", e);
-          if (active) setWords([]);
+          if (active) setError(e?.message ?? "단어를 불러오지 못했습니다");
         });
       return () => {
         active = false;
@@ -184,8 +200,49 @@ export function ListScreen() {
         })}
       </ScrollView>
 
+      {/* Error state */}
+      {error ? (
+        <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
+          <Card padding={20} style={{ alignItems: "center" }}>
+            <Icon name="x" size={36} color={colors.danger} strokeWidth={2.4} />
+            <Text
+              style={{
+                marginTop: 10,
+                fontSize: 15,
+                fontWeight: "700",
+                color: colors.ink[900],
+              }}
+            >
+              단어를 불러오지 못했습니다
+            </Text>
+            <Text
+              style={{
+                marginTop: 4,
+                fontSize: 12,
+                color: colors.ink[500],
+                textAlign: "center",
+              }}
+            >
+              {error}
+            </Text>
+            <View style={{ marginTop: 14 }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon="refresh"
+                onPress={() => {
+                  void fetchData();
+                }}
+              >
+                다시 시도
+              </Button>
+            </View>
+          </Card>
+        </View>
+      ) : null}
+
       {/* List */}
-      {view === "list" ? (
+      {!error && view === "list" ? (
         <FlatList
           data={filtered}
           keyExtractor={(w) => w.id}
@@ -201,7 +258,7 @@ export function ListScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={<Empty filter={filter} search={search} />}
         />
-      ) : (
+      ) : !error && view === "grid" ? (
         <FlatList
           key="grid"
           data={filtered}
@@ -220,7 +277,7 @@ export function ListScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={<Empty filter={filter} search={search} />}
         />
-      )}
+      ) : null}
     </SafeAreaView>
   );
 }

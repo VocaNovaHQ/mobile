@@ -115,6 +115,18 @@ export async function signInWithApple(): Promise<{ ok: true } | { ok: false; err
     });
 
     if (error) return { ok: false, error: error.message };
+
+    // Apple은 fullName을 첫 로그인 시에만 제공 → user_metadata에 저장.
+    // 두 번째 로그인부터는 credential.fullName === null 이므로 덮어쓰기 방지 위해
+    // 실제 이름이 있을 때만 update.
+    const fullName = formatAppleFullName(credential.fullName);
+    if (fullName) {
+      await supabase.auth
+        .updateUser({ data: { full_name: fullName } })
+        .catch(() => {
+          // 이름 저장 실패는 로그인 자체를 막지 않음 — 무시
+        });
+    }
     return { ok: true };
   } catch (e: any) {
     if (e?.code === "ERR_REQUEST_CANCELED") {
@@ -126,4 +138,42 @@ export async function signInWithApple(): Promise<{ ok: true } | { ok: false; err
 
 export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
+}
+
+/**
+ * 현재 로그인된 사용자의 계정 + 모든 데이터를 영구 삭제.
+ * Supabase RPC delete_my_account 호출 → auth.users row 제거 → 자동 로그아웃.
+ * Apple App Review Guideline 5.1.1(v) 대응.
+ */
+export async function deleteMyAccount(): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const { error } = await supabase.rpc("delete_my_account");
+    if (error) return { ok: false, error: error.message };
+    // auth.users 삭제 후 토큰은 무효화됐지만 클라이언트 세션은 명시적으로 정리.
+    await supabase.auth.signOut().catch(() => {});
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "알 수 없는 오류" };
+  }
+}
+
+/**
+ * Apple credential.fullName ({ givenName, familyName, ... }) → 단일 문자열.
+ * 한국식: familyName + givenName, 영미식: givenName + familyName.
+ * 둘 다 비어있으면 null.
+ */
+function formatAppleFullName(
+  full: AppleAuthentication.AppleAuthenticationFullName | null
+): string | null {
+  if (!full) return null;
+  const given = full.givenName?.trim() ?? "";
+  const family = full.familyName?.trim() ?? "";
+  if (!given && !family) return null;
+  // 한국어 사용자가 다수면 family + given 이 더 자연스러움.
+  // 단, given이나 family 중 하나만 있으면 그것만 반환.
+  if (!family) return given;
+  if (!given) return family;
+  // 한국어 이름 휴리스틱: family가 1~2자 한글이면 한국식 결합.
+  const isKoreanFamily = /^[가-힣]{1,2}$/.test(family);
+  return isKoreanFamily ? `${family}${given}` : `${given} ${family}`;
 }

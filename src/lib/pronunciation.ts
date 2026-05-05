@@ -134,18 +134,22 @@ function pickByDialect(withMp3: any[], dialect: Dialect): string | null {
   const isCombined = (s: any) =>
     code(s).includes("US") && code(s).includes("GB");
 
+  let pick: string | undefined;
   if (dialect === "us") {
     const usOnly = withMp3.find(
       (s: any) => code(s) === "US" || (code(s).includes("US") && !code(s).includes("GB"))
     );
     const combined = withMp3.find(isCombined);
-    return usOnly?.symbolFile ?? combined?.symbolFile ?? null;
+    pick = usOnly?.symbolFile ?? combined?.symbolFile;
+  } else {
+    const ukOnly = withMp3.find(
+      (s: any) => code(s) === "GB" || (code(s).includes("GB") && !code(s).includes("US"))
+    );
+    const combined = withMp3.find(isCombined);
+    pick = ukOnly?.symbolFile ?? combined?.symbolFile;
   }
 
-  // uk
-  const ukOnly = withMp3.find(
-    (s: any) => code(s) === "GB" || (code(s).includes("GB") && !code(s).includes("US"))
-  );
-  const combined = withMp3.find(isCombined);
-  return ukOnly?.symbolFile ?? combined?.symbolFile ?? null;
+  if (!pick) return null;
+  // iOS ATS는 http를 기본 차단. 네이버는 보통 https로 주지만 방어적으로 https 강제.
+  return pick.replace(/^http:\/\//, "https://");
 }
