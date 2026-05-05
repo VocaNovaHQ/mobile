@@ -14,9 +14,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.vocanova.app",
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "NSUserNotificationsUsageDescription": "복습 시간을 알려드리기 위해 알림 권한을 사용합니다."
+      }
     },
     "android": {
       "adaptiveIcon": {
