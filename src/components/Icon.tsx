@@ -12,11 +12,13 @@ import {
   Chrome,
   Clock,
   Edit3,
+  FileText,
   Filter,
   Flame,
   Globe,
   Grid3x3,
   Heart,
+  HelpCircle,
   Home,
   Layers,
   Link2,
@@ -27,6 +29,7 @@ import {
   Search,
   Settings,
   Share2,
+  Shield,
   Smartphone,
   SortAsc,
   Sparkles,
@@ -84,6 +87,9 @@ const ICONS = {
   smartphone: Smartphone,
   cursor: MousePointer2,
   link: Link2,
+  shield: Shield,
+  "file-text": FileText,
+  "help-circle": HelpCircle,
 } as const;
 
 export type IconName = keyof typeof ICONS;
