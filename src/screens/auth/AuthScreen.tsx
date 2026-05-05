@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Alert, Platform, Text, View } from "react-native";
+import { Alert, Linking, Platform, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { GoogleSignInButton, Icon } from "../../components";
 import type { IconName } from "../../components/Icon";
 import { signInWithApple, signInWithGoogle } from "../../lib/auth";
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "../../lib/legalLinks";
 import { colors, shadow } from "../../theme/tokens";
 
 export function AuthScreen() {
@@ -200,8 +201,21 @@ export function AuthScreen() {
             marginTop: 4,
           }}
         >
-          계속하면 서비스 이용약관과 개인정보처리방침에{"\n"}동의하는 것으로
-          간주됩니다.
+          계속하면{" "}
+          <Text
+            style={{ color: colors.blue[500], fontWeight: "600" }}
+            onPress={() => Linking.openURL(TERMS_OF_SERVICE_URL)}
+          >
+            서비스 이용약관
+          </Text>
+          과{" "}
+          <Text
+            style={{ color: colors.blue[500], fontWeight: "600" }}
+            onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+          >
+            개인정보처리방침
+          </Text>
+          에{"\n"}동의하는 것으로 간주됩니다.
         </Text>
       </View>
     </SafeAreaView>
