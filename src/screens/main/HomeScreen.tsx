@@ -1,12 +1,15 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   Text,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,7 +23,7 @@ import {
   SectionHeader,
   WordLookupCard,
 } from "../../components";
-import { colors } from "../../theme/tokens";
+import { colors, shadow } from "../../theme/tokens";
 import { loadWords } from "../../lib/dataSource";
 import { fetchStats, type StatsSummary } from "../../lib/stats";
 import { useCurrentUser } from "../../store/auth";
@@ -76,9 +79,14 @@ export function HomeScreen() {
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.ink[50] }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       <ScrollView
         contentContainerStyle={{ paddingBottom: 110, flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -109,57 +117,7 @@ export function HomeScreen() {
         {/* Streak banner */}
         {!isLoading && !error ? (
           <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
-            <Card padding={16} style={{ backgroundColor: colors.blue[50], borderColor: "transparent" }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                  marginBottom: 6,
-                }}
-              >
-                <Icon name="flame" size={18} color={colors.blue[500]} strokeWidth={2.4} />
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: "700",
-                    color: colors.blue[600],
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  STREAK
-                </Text>
-              </View>
-              <Text
-                style={{
-                  fontSize: 32,
-                  fontWeight: "800",
-                  color: colors.ink[900],
-                  letterSpacing: -1,
-                }}
-              >
-                {stats?.streak ?? 0}
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    opacity: 0.7,
-                  }}
-                >
-                  {" "}일
-                </Text>
-              </Text>
-              <Text
-                numberOfLines={2}
-                style={{
-                  fontSize: 13,
-                  color: colors.ink[600],
-                  marginTop: 4,
-                }}
-              >
-                {streakMessage(stats)}
-              </Text>
-            </Card>
+            <StreakCard stats={stats} />
           </View>
         ) : null}
 
@@ -169,13 +127,6 @@ export function HomeScreen() {
             <Card padding={20}>
               <TodaysMission words={words ?? []} onStart={() => navigation.navigate("Study", {})} />
             </Card>
-          </View>
-        ) : null}
-
-        {/* In-app word lookup */}
-        {!isLoading && !error ? (
-          <View style={{ paddingHorizontal: 20, paddingBottom: 16 }}>
-            <WordLookupCard onAdded={fetchData} />
           </View>
         ) : null}
 
@@ -296,7 +247,15 @@ export function HomeScreen() {
           ))}
         </View>
 
+        {/* In-app word lookup */}
+        {!isLoading && !error ? (
+          <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+            <WordLookupCard onAdded={fetchData} />
+          </View>
+        ) : null}
+
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -352,6 +311,191 @@ function formatToday(): string {
     day: "numeric",
     weekday: "long",
   });
+}
+
+function StreakCard({ stats }: { stats: StatsSummary | null }) {
+  const streak = stats?.streak ?? 0;
+  const longest = stats?.longestStreak ?? 0;
+  const last7 = (stats?.daily ?? []).slice(-7);
+
+  return (
+    <View style={{ borderRadius: 18, overflow: "hidden", ...shadow.primary }}>
+      <LinearGradient
+        colors={[colors.blue[500], colors.blue[700]]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ padding: 18 }}
+      >
+        {/* Decorative flame watermark */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: -24,
+            right: -28,
+            opacity: 0.13,
+            transform: [{ rotate: "14deg" }],
+          }}
+        >
+          <Icon name="flame" size={150} color="#fff" strokeWidth={1.6} />
+        </View>
+
+        {/* Top row: label + best chip */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 8,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Icon name="flame" size={16} color="#fff" strokeWidth={2.6} />
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "800",
+                color: "#fff",
+                letterSpacing: 0.8,
+              }}
+            >
+              STREAK
+            </Text>
+          </View>
+          {longest > 0 ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                paddingHorizontal: 9,
+                paddingVertical: 4,
+                borderRadius: 999,
+                backgroundColor: "rgba(255,255,255,0.18)",
+              }}
+            >
+              <Icon name="trophy" size={11} color="#fff" strokeWidth={2.6} />
+              <Text
+                style={{ fontSize: 10.5, color: "#fff", fontWeight: "700" }}
+              >
+                최고 {longest}일
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* Big streak number */}
+        <Text
+          style={{
+            fontSize: 40,
+            fontWeight: "800",
+            color: "#fff",
+            letterSpacing: -1.4,
+            lineHeight: 46,
+          }}
+        >
+          {streak}
+          <Text style={{ fontSize: 18, fontWeight: "600", opacity: 0.85 }}>
+            {" "}일
+          </Text>
+        </Text>
+
+        <Text
+          numberOfLines={2}
+          style={{
+            fontSize: 12.5,
+            color: "rgba(255,255,255,0.88)",
+            marginTop: 4,
+            lineHeight: 18,
+          }}
+        >
+          {streakMessage(stats)}
+        </Text>
+
+        {/* 7-day activity strip */}
+        {last7.length > 0 ? (
+          <>
+            <View
+              style={{
+                marginTop: 14,
+                marginBottom: 12,
+                height: 1,
+                backgroundColor: "rgba(255,255,255,0.18)",
+              }}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              {last7.map((d, i) => {
+                const isToday = i === last7.length - 1;
+                const active = d.count > 0;
+                return (
+                  <View key={d.date} style={{ alignItems: "center", gap: 6 }}>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "700",
+                        color: isToday
+                          ? "#fff"
+                          : "rgba(255,255,255,0.65)",
+                        letterSpacing: 0.2,
+                      }}
+                    >
+                      {weekdayKo(d.date)}
+                    </Text>
+                    <View
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 12,
+                        backgroundColor: active
+                          ? "#fff"
+                          : "rgba(255,255,255,0.14)",
+                        borderWidth: isToday ? 1.5 : 0,
+                        borderColor: "#fff",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {active ? (
+                        <Icon
+                          name="check"
+                          size={13}
+                          color={colors.blue[600]}
+                          strokeWidth={3.2}
+                        />
+                      ) : isToday ? (
+                        <View
+                          style={{
+                            width: 5,
+                            height: 5,
+                            borderRadius: 3,
+                            backgroundColor: "#fff",
+                          }}
+                        />
+                      ) : null}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+      </LinearGradient>
+    </View>
+  );
+}
+
+const KOREAN_WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+
+function weekdayKo(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  if (!y || !m || !d) return "";
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return KOREAN_WEEKDAYS[dow] ?? "";
 }
 
 function streakMessage(stats: StatsSummary | null): string {

@@ -184,7 +184,6 @@ export function ProfileScreen() {
             email={email}
             reminderValue={reminderValue}
             onReminderPress={() => navigation.navigate("Reminder")}
-            onSchedulePress={() => navigation.navigate("Schedule")}
           />
         ) : (
           <StatsTab
@@ -279,15 +278,15 @@ function ProfileBody({
   email,
   reminderValue,
   onReminderPress,
-  onSchedulePress,
 }: {
   name: string;
   initial: string;
   email: string;
   reminderValue: string;
   onReminderPress: () => void;
-  onSchedulePress: () => void;
 }) {
+  const EXTENSION_URL =
+    "https://chromewebstore.google.com/detail/vocanova/kfgjfccpggcdbcjipgmmmkbklidieflb";
   return (
     <>
       <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
@@ -325,8 +324,8 @@ function ProfileBody({
             title="복습 알림"
             value={reminderValue}
             onPress={onReminderPress}
+            last
           />
-          <Row icon="bolt" title="복습 일정" onPress={onSchedulePress} last />
         </Group>
 
         <Group title="크롬 익스텐션">
@@ -338,6 +337,7 @@ function ProfileBody({
                 연결됨
               </Chip>
             }
+            onPress={() => Linking.openURL(EXTENSION_URL)}
             last
           />
         </Group>
