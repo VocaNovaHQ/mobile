@@ -50,7 +50,10 @@ export function RootNavigator() {
             <Stack.Screen
               name="Study"
               component={StudyScreen}
-              options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
+              options={{
+                presentation: "fullScreenModal",
+                animation: "slide_from_bottom",
+              }}
             />
             <Stack.Screen
               name="Schedule"

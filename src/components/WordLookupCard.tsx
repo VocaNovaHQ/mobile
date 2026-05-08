@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -31,6 +31,7 @@ export function WordLookupCard({ onAdded }: WordLookupCardProps) {
   const [query, setQuery] = useState("");
   const [state, setState] = useState<LookupState>({ kind: "idle" });
   const [adding, setAdding] = useState(false);
+  const inputRef = useRef<TextInput>(null);
 
   const trimmed = query.trim();
   const canSearch = trimmed.length > 0 && state.kind !== "loading";
@@ -117,11 +118,13 @@ export function WordLookupCard({ onAdded }: WordLookupCardProps) {
 
       {/* Search row */}
       <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-        <View
+        <Pressable
+          onPress={() => inputRef.current?.focus()}
           style={{
             flex: 1,
-            height: 44,
+            minHeight: 52,
             paddingHorizontal: 14,
+            paddingVertical: 8,
             borderRadius: 12,
             backgroundColor: colors.ink[50],
             borderWidth: 0.5,
@@ -133,6 +136,7 @@ export function WordLookupCard({ onAdded }: WordLookupCardProps) {
         >
           <Icon name="search" size={16} color={colors.ink[500]} />
           <TextInput
+            ref={inputRef}
             value={query}
             onChangeText={setQuery}
             placeholder="apple"
@@ -147,24 +151,26 @@ export function WordLookupCard({ onAdded }: WordLookupCardProps) {
               flex: 1,
               fontSize: 14,
               color: colors.ink[900],
-              padding: 0,
+              paddingVertical: 6,
               fontWeight: "500",
             }}
           />
           {state.kind === "loading" ? (
             <ActivityIndicator size="small" color={colors.blue[500]} />
           ) : query ? (
-            <Pressable onPress={handleReset} hitSlop={8}>
+            <Pressable onPress={handleReset} hitSlop={12}>
               <Icon name="x" size={14} color={colors.ink[400]} />
             </Pressable>
           ) : null}
-        </View>
+        </Pressable>
         <Pressable
           onPress={handleSearch}
           disabled={!canSearch}
+          hitSlop={8}
           style={{
-            height: 44,
-            paddingHorizontal: 16,
+            minHeight: 52,
+            paddingHorizontal: 22,
+            paddingVertical: 10,
             borderRadius: 12,
             backgroundColor: colors.blue[500],
             alignItems: "center",

@@ -1,7 +1,6 @@
 import { Text, View } from "react-native";
 import { Card } from "./Card";
 import { Icon, type IconName } from "./Icon";
-import { SectionHeader } from "./SectionHeader";
 import { colors } from "../theme/tokens";
 import type { StatsSummary } from "../lib/stats";
 
@@ -37,13 +36,6 @@ export function StatsBody({ stats }: StatsBodyProps) {
       color: colors.warn,
     },
   ] as const;
-
-  const badges = [
-    { icon: "flame" as const, label: "7일 연속", on: streak >= 7 },
-    { icon: "trophy" as const, label: "100단어", on: total >= 100 },
-    { icon: "bolt" as const, label: "30일 연속", on: streak >= 30 },
-    { icon: "brain" as const, label: "마스터 50", on: byStatus.mastered >= 50 },
-  ];
 
   return (
     <>
@@ -235,48 +227,6 @@ export function StatsBody({ stats }: StatsBodyProps) {
         </Card>
       </View>
 
-      <SectionHeader title="달성한 배지" />
-      <View
-        style={{
-          paddingHorizontal: 20,
-          paddingBottom: 12,
-          flexDirection: "row",
-          gap: 8,
-        }}
-      >
-        {badges.map((b) => (
-          <View
-            key={b.label}
-            style={{
-              flex: 1,
-              backgroundColor: b.on ? colors.blue[50] : "#fff",
-              borderWidth: 0.5,
-              borderColor: "rgba(15,23,42,0.05)",
-              borderRadius: 14,
-              paddingVertical: 14,
-              alignItems: "center",
-              opacity: b.on ? 1 : 0.5,
-            }}
-          >
-            <Icon
-              name={b.icon as IconName}
-              size={28}
-              color={b.on ? colors.blue[500] : colors.ink[400]}
-              strokeWidth={2}
-            />
-            <Text
-              style={{
-                fontSize: 11,
-                fontWeight: "700",
-                color: colors.ink[700],
-                marginTop: 6,
-              }}
-            >
-              {b.label}
-            </Text>
-          </View>
-        ))}
-      </View>
     </>
   );
 }
