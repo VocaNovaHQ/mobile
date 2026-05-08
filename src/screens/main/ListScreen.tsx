@@ -282,6 +282,7 @@ export function ListScreen() {
               onPress={() =>
                 navigation.navigate("Detail", { wordId: item.id })
               }
+              onLongPress={() => handleDelete(item)}
               onDelete={() => handleDelete(item)}
             />
           )}
@@ -302,6 +303,7 @@ export function ListScreen() {
               onPress={() =>
                 navigation.navigate("Detail", { wordId: item.id })
               }
+              onLongPress={() => handleDelete(item)}
             />
           )}
           showsVerticalScrollIndicator={false}
@@ -317,10 +319,12 @@ export function ListScreen() {
 function SwipeableWordRow({
   word,
   onPress,
+  onLongPress,
   onDelete,
 }: {
   word: Word;
   onPress: () => void;
+  onLongPress: () => void;
   onDelete: () => void;
 }) {
   const swipeableRef = useRef<SwipeableMethods | null>(null);
@@ -366,12 +370,20 @@ function SwipeableWordRow({
       overshootLeft={false}
       containerStyle={{ borderRadius: 12 }}
     >
-      <WordRow word={word} onPress={onPress} />
+      <WordRow word={word} onPress={onPress} onLongPress={onLongPress} />
     </ReanimatedSwipeable>
   );
 }
 
-function WordRow({ word, onPress }: { word: Word; onPress: () => void }) {
+function WordRow({
+  word,
+  onPress,
+  onLongPress,
+}: {
+  word: Word;
+  onPress: () => void;
+  onLongPress?: () => void;
+}) {
   const m = word.mastery;
   const masteryColor =
     m > 0.7 ? colors.success : m > 0.4 ? colors.blue[500] : colors.warn;
@@ -382,6 +394,8 @@ function WordRow({ word, onPress }: { word: Word; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={350}
       style={{
         backgroundColor: "#fff",
         borderRadius: 12,
@@ -456,12 +470,22 @@ function WordRow({ word, onPress }: { word: Word; onPress: () => void }) {
   );
 }
 
-function WordTile({ word, onPress }: { word: Word; onPress: () => void }) {
+function WordTile({
+  word,
+  onPress,
+  onLongPress,
+}: {
+  word: Word;
+  onPress: () => void;
+  onLongPress?: () => void;
+}) {
   const m = word.mastery;
   const def = word.snapshot.partsOfSpeech[0]?.meanings[0]?.definition ?? "";
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={350}
       style={{
         flex: 1,
         backgroundColor: "#fff",
