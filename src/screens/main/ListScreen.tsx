@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   FlatList,
   Pressable,
   ScrollView,
@@ -10,9 +11,13 @@ import {
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ReanimatedSwipeable, {
+  type SwipeableMethods,
+} from "react-native-gesture-handler/ReanimatedSwipeable";
 import { AppHeader, Button, Card, Icon, Ring } from "../../components";
 import { colors } from "../../theme/tokens";
 import { loadWords } from "../../lib/dataSource";
+import { deleteUserWord } from "../../lib/words";
 import type { RootStackParamList } from "../../navigation/types";
 import type { Word, WordStatus } from "../../types/word";
 
@@ -68,6 +73,30 @@ export function ListScreen() {
       };
     }, [])
   );
+
+  const handleDelete = useCallback((word: Word) => {
+    if (!word.user_word?.id) return;
+    const userWordId = word.user_word.id;
+    Alert.alert(
+      "단어 삭제",
+      `'${word.snapshot.word}' 단어를 삭제하시겠습니까?`,
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: () => {
+            setWords((prev) => prev.filter((w) => w.id !== word.id));
+            deleteUserWord(userWordId).catch((e: any) => {
+              console.warn("[ListScreen] deleteUserWord failed", e);
+              setError(e?.message ?? "단어를 삭제하지 못했습니다");
+              void fetchData();
+            });
+          },
+        },
+      ]
+    );
+  }, [fetchData]);
 
   const filtered = useMemo(() => {
     let list = words;
@@ -248,11 +277,12 @@ export function ListScreen() {
           keyExtractor={(w) => w.id}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110, gap: 10 }}
           renderItem={({ item }) => (
-            <WordRow
+            <SwipeableWordRow
               word={item}
               onPress={() =>
                 navigation.navigate("Detail", { wordId: item.id })
               }
+              onDelete={() => handleDelete(item)}
             />
           )}
           showsVerticalScrollIndicator={false}
@@ -283,6 +313,63 @@ export function ListScreen() {
 }
 
 // ─── Components ────────────────────────────────────────
+
+function SwipeableWordRow({
+  word,
+  onPress,
+  onDelete,
+}: {
+  word: Word;
+  onPress: () => void;
+  onDelete: () => void;
+}) {
+  const swipeableRef = useRef<SwipeableMethods | null>(null);
+
+  const handleDeletePress = () => {
+    swipeableRef.current?.close();
+    onDelete();
+  };
+
+  const renderLeftActions = () => (
+    <View
+      style={{
+        width: 88,
+        marginRight: 8,
+        justifyContent: "center",
+      }}
+    >
+      <Pressable
+        onPress={handleDeletePress}
+        style={{
+          flex: 1,
+          backgroundColor: colors.danger,
+          borderRadius: 12,
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 4,
+        }}
+      >
+        <Icon name="trash" size={22} color="#fff" strokeWidth={2.2} />
+        <Text style={{ fontSize: 11, fontWeight: "800", color: "#fff" }}>
+          삭제
+        </Text>
+      </Pressable>
+    </View>
+  );
+
+  return (
+    <ReanimatedSwipeable
+      ref={swipeableRef}
+      renderLeftActions={renderLeftActions}
+      friction={2}
+      leftThreshold={40}
+      overshootLeft={false}
+      containerStyle={{ borderRadius: 12 }}
+    >
+      <WordRow word={word} onPress={onPress} />
+    </ReanimatedSwipeable>
+  );
+}
 
 function WordRow({ word, onPress }: { word: Word; onPress: () => void }) {
   const m = word.mastery;
