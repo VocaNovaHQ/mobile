@@ -7,9 +7,13 @@
 
 ## 실행화면
 
-<img width="585" height="1266" alt="IMG_9640" src="https://github.com/user-attachments/assets/09292ad6-9307-4bb0-b3ac-0813c42bb66d" />
-<img width="585" height="1266" alt="IMG_9641" src="https://github.com/user-attachments/assets/c6c6a3d8-1922-48c8-b207-1f0a1fa9720f" />
-<img width="585" height="1266" alt="IMG_9642" src="https://github.com/user-attachments/assets/432fcf3b-90f1-4df8-961d-dfcab24ada7a" />
+<table>
+  <tr>
+    <td><img width="280" alt="IMG_9640" src="https://github.com/user-attachments/assets/09292ad6-9307-4bb0-b3ac-0813c42bb66d" /></td>
+    <td><img width="280" alt="IMG_9641" src="https://github.com/user-attachments/assets/c6c6a3d8-1922-48c8-b207-1f0a1fa9720f" /></td>
+    <td><img width="280" alt="IMG_9642" src="https://github.com/user-attachments/assets/432fcf3b-90f1-4df8-961d-dfcab24ada7a" /></td>
+  </tr>
+</table>
 
 
 ## 주요 기능
