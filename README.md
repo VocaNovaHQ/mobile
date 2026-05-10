@@ -9,12 +9,11 @@
 
 <table>
   <tr>
-    <td><img width="280" alt="IMG_9640" src="https://github.com/user-attachments/assets/09292ad6-9307-4bb0-b3ac-0813c42bb66d" /></td>
-    <td><img width="280" alt="IMG_9641" src="https://github.com/user-attachments/assets/c6c6a3d8-1922-48c8-b207-1f0a1fa9720f" /></td>
-    <td><img width="280" alt="IMG_9642" src="https://github.com/user-attachments/assets/432fcf3b-90f1-4df8-961d-dfcab24ada7a" /></td>
+    <td><img width="280" alt="IMG_9640" src="https://github.com/user-attachments/assets/1e889971-73a9-4c76-853c-8c2fefd293c3" /></td>
+    <td><img width="280" alt="IMG_9641" src="https://github.com/user-attachments/assets/1d644f99-305d-4fe3-b109-d01daa5721cf" /></td>
+    <td><img width="280" alt="IMG_9642" src="https://github.com/user-attachments/assets/747c3e94-cd06-4cc1-8d92-ccf012223e7b" /></td>
   </tr>
 </table>
-
 
 ## 주요 기능
 
