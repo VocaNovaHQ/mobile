@@ -49,12 +49,20 @@ export function ListScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const requestIdRef = useRef(0);
+  const listRef = useRef<FlatList<Word>>(null);
+  const gridRef = useRef<FlatList<Word>>(null);
 
   // 300ms 디바운스
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
     return () => clearTimeout(t);
   }, [search]);
+
+  // 탭 전환 시 스크롤 최상단으로
+  useEffect(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    gridRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [filter]);
 
   const loadPage = useCallback(
     async (targetPage: number, mode: "replace" | "append") => {
@@ -131,15 +139,10 @@ export function ListScreen() {
     [loadPage]
   );
 
-  const subtitle = hasMore
-    ? `${words.length}+ 개의 단어`
-    : `${words.length}개의 단어`;
-
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.ink[50] }}>
       <AppHeader
         title="단어장"
-        subtitle={subtitle}
         big
         trailing={
           <>
@@ -289,6 +292,7 @@ export function ListScreen() {
       {/* List */}
       {!error && view === "list" ? (
         <FlatList
+          ref={listRef}
           data={words}
           keyExtractor={(w) => w.id}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110, gap: 10 }}
@@ -325,6 +329,7 @@ export function ListScreen() {
         />
       ) : !error && view === "grid" ? (
         <FlatList
+          ref={gridRef}
           key="grid"
           data={words}
           keyExtractor={(w) => w.id}
