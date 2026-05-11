@@ -40,9 +40,14 @@ function joinToWord(row: any): Word {
  */
 export async function fetchMyWords(opts?: {
   status?: WordStatus | "all";
+  isFavorite?: boolean;
+  search?: string;
+  offset?: number;
   limit?: number;
 }): Promise<Word[]> {
-  // user_words inner join 으로 "내 단어장에 든 words" 만 가져옴
+  const limit = opts?.limit ?? 200;
+  const offset = opts?.offset ?? 0;
+  // words!inner: search filter must propagate to parent rows.
   let q = supabase
     .from("user_words")
     .select(
@@ -50,16 +55,22 @@ export async function fetchMyWords(opts?: {
       id, status, srs_due_at, srs_interval_days, srs_ease,
       review_count, correct_count, source_url, context_sentence, note,
       is_favorite, folder_id, user_id, word_id, created_at, updated_at,
-      words (
+      words!inner (
         id, lemma, snapshot, source, last_synced_at, created_at
       )
       `
     )
     .order("created_at", { ascending: false })
-    .limit(opts?.limit ?? 200);
+    .range(offset, offset + limit - 1);
 
   if (opts?.status && opts.status !== "all") {
     q = q.eq("status", opts.status);
+  }
+  if (opts?.isFavorite === true) {
+    q = q.eq("is_favorite", true);
+  }
+  if (opts?.search) {
+    q = q.ilike("words.lemma", `%${opts.search}%`);
   }
 
   const { data, error } = await q;
