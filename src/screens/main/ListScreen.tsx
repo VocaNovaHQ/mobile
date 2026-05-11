@@ -35,22 +35,31 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "favorite", label: "즐겨찾기" },
 ];
 
+type CacheEntry = { words: Word[]; page: number; hasMore: boolean };
+
 export function ListScreen() {
   const navigation = useNavigation<Nav>();
-  const [words, setWords] = useState<Word[]>([]);
+  const [cache, setCache] = useState<Record<string, CacheEntry>>({});
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "grid">("list");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const requestIdRef = useRef(0);
   const listRef = useRef<FlatList<Word>>(null);
   const gridRef = useRef<FlatList<Word>>(null);
+  const cacheRef = useRef(cache);
+  cacheRef.current = cache;
+
+  const cacheKey = `${filter}|${debouncedSearch}`;
+  const entry = cache[cacheKey];
+  const words = entry?.words ?? [];
+  const currentPage = entry?.page ?? 0;
+  const hasMore = entry?.hasMore ?? true;
+  const isLoaded = entry !== undefined;
 
   // 300ms 디바운스
   useEffect(() => {
@@ -58,14 +67,15 @@ export function ListScreen() {
     return () => clearTimeout(t);
   }, [search]);
 
-  // 탭 전환 시 스크롤 최상단으로
+  // 탭/검색 전환 시 스크롤 최상단으로
   useEffect(() => {
     listRef.current?.scrollToOffset({ offset: 0, animated: false });
     gridRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }, [filter]);
+  }, [filter, debouncedSearch]);
 
   const loadPage = useCallback(
     async (targetPage: number, mode: "replace" | "append") => {
+      const key = `${filter}|${debouncedSearch}`;
       const reqId = ++requestIdRef.current;
       setLoading(true);
       try {
@@ -75,13 +85,22 @@ export function ListScreen() {
           page: targetPage,
         });
         if (reqId !== requestIdRef.current) return;
-        if (mode === "replace") {
-          setWords(next);
-        } else {
-          setWords((prev) => [...prev, ...next]);
-        }
-        setHasMore(next.length === WORDS_PAGE_SIZE);
-        setPage(targetPage);
+        setCache((prev) => {
+          const existing = prev[key];
+          const merged: CacheEntry =
+            mode === "append" && existing
+              ? {
+                  words: [...existing.words, ...next],
+                  page: targetPage,
+                  hasMore: next.length === WORDS_PAGE_SIZE,
+                }
+              : {
+                  words: next,
+                  page: targetPage,
+                  hasMore: next.length === WORDS_PAGE_SIZE,
+                };
+          return { ...prev, [key]: merged };
+        });
         setError(null);
       } catch (e: any) {
         if (reqId !== requestIdRef.current) return;
@@ -94,17 +113,20 @@ export function ListScreen() {
     [filter, debouncedSearch]
   );
 
-  // focus 진입 + filter/검색 변경 시 첫 페이지 리셋
+  // focus 진입 + filter/검색 변경 시: 캐시 없을 때만 첫 페이지 로드
   useFocusEffect(
     useCallback(() => {
-      void loadPage(0, "replace");
-    }, [loadPage])
+      const key = `${filter}|${debouncedSearch}`;
+      if (cacheRef.current[key] === undefined) {
+        void loadPage(0, "replace");
+      }
+    }, [filter, debouncedSearch, loadPage])
   );
 
   const onEndReached = useCallback(() => {
-    if (loading || !hasMore) return;
-    void loadPage(page + 1, "append");
-  }, [loading, hasMore, page, loadPage]);
+    if (!isLoaded || loading || !hasMore) return;
+    void loadPage(currentPage + 1, "append");
+  }, [isLoaded, loading, hasMore, currentPage, loadPage]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -125,7 +147,16 @@ export function ListScreen() {
             text: "삭제",
             style: "destructive",
             onPress: () => {
-              setWords((prev) => prev.filter((w) => w.id !== word.id));
+              setCache((prev) => {
+                const next: typeof prev = {};
+                for (const [k, v] of Object.entries(prev)) {
+                  next[k] = {
+                    ...v,
+                    words: v.words.filter((w) => w.id !== word.id),
+                  };
+                }
+                return next;
+              });
               deleteUserWord(userWordId).catch((e: any) => {
                 console.warn("[ListScreen] deleteUserWord failed", e);
                 setError(e?.message ?? "단어를 삭제하지 못했습니다");
