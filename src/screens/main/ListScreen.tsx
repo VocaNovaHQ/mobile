@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -16,10 +18,10 @@ import ReanimatedSwipeable, {
 } from "react-native-gesture-handler/ReanimatedSwipeable";
 import { AppHeader, Button, Card, Icon, Ring } from "../../components";
 import { colors } from "../../theme/tokens";
-import { loadWords } from "../../lib/dataSource";
+import { WORDS_PAGE_SIZE, loadWordsPage } from "../../lib/dataSource";
 import { deleteUserWord } from "../../lib/words";
 import type { RootStackParamList } from "../../navigation/types";
-import type { Word, WordStatus } from "../../types/word";
+import type { Word } from "../../types/word";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -33,97 +35,145 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "favorite", label: "즐겨찾기" },
 ];
 
+type CacheEntry = { words: Word[]; page: number; hasMore: boolean };
+
 export function ListScreen() {
   const navigation = useNavigation<Nav>();
-  const [words, setWords] = useState<Word[]>([]);
+  const [cache, setCache] = useState<Record<string, CacheEntry>>({});
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "grid">("list");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const requestIdRef = useRef(0);
+  const listRef = useRef<FlatList<Word>>(null);
+  const gridRef = useRef<FlatList<Word>>(null);
+  const cacheRef = useRef(cache);
+  cacheRef.current = cache;
 
-  const fetchData = useCallback(() => {
-    setError(null);
-    return loadWords()
-      .then((w) => {
-        setWords(w);
-      })
-      .catch((e: any) => {
-        console.warn("[ListScreen] loadWords failed", e);
-        setError(e?.message ?? "단어를 불러오지 못했습니다");
-      });
-  }, []);
+  const cacheKey = `${filter}|${debouncedSearch}`;
+  const entry = cache[cacheKey];
+  const words = entry?.words ?? [];
+  const currentPage = entry?.page ?? 0;
+  const hasMore = entry?.hasMore ?? true;
+  const isLoaded = entry !== undefined;
 
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      loadWords()
-        .then((w) => {
-          if (active) {
-            setWords(w);
-            setError(null);
-          }
-        })
-        .catch((e: any) => {
-          console.warn("[ListScreen] loadWords failed", e);
-          if (active) setError(e?.message ?? "단어를 불러오지 못했습니다");
+  // 300ms 디바운스
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // 탭/검색 전환 시 스크롤 최상단으로
+  useEffect(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    gridRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [filter, debouncedSearch]);
+
+  const loadPage = useCallback(
+    async (targetPage: number, mode: "replace" | "append") => {
+      const key = `${filter}|${debouncedSearch}`;
+      const reqId = ++requestIdRef.current;
+      setLoading(true);
+      try {
+        const next = await loadWordsPage({
+          filter,
+          search: debouncedSearch,
+          page: targetPage,
         });
-      return () => {
-        active = false;
-      };
-    }, [])
+        if (reqId !== requestIdRef.current) return;
+        setCache((prev) => {
+          const existing = prev[key];
+          const merged: CacheEntry =
+            mode === "append" && existing
+              ? {
+                  words: [...existing.words, ...next],
+                  page: targetPage,
+                  hasMore: next.length === WORDS_PAGE_SIZE,
+                }
+              : {
+                  words: next,
+                  page: targetPage,
+                  hasMore: next.length === WORDS_PAGE_SIZE,
+                };
+          return { ...prev, [key]: merged };
+        });
+        setError(null);
+      } catch (e: any) {
+        if (reqId !== requestIdRef.current) return;
+        console.warn("[ListScreen] loadWordsPage failed", e);
+        setError(e?.message ?? "단어를 불러오지 못했습니다");
+      } finally {
+        if (reqId === requestIdRef.current) setLoading(false);
+      }
+    },
+    [filter, debouncedSearch]
   );
 
-  const handleDelete = useCallback((word: Word) => {
-    if (!word.user_word?.id) return;
-    const userWordId = word.user_word.id;
-    Alert.alert(
-      "단어 삭제",
-      `'${word.snapshot.word}' 단어를 삭제하시겠습니까?`,
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "삭제",
-          style: "destructive",
-          onPress: () => {
-            setWords((prev) => prev.filter((w) => w.id !== word.id));
-            deleteUserWord(userWordId).catch((e: any) => {
-              console.warn("[ListScreen] deleteUserWord failed", e);
-              setError(e?.message ?? "단어를 삭제하지 못했습니다");
-              void fetchData();
-            });
-          },
-        },
-      ]
-    );
-  }, [fetchData]);
+  // focus 진입 + filter/검색 변경 시: 캐시 없을 때만 첫 페이지 로드
+  useFocusEffect(
+    useCallback(() => {
+      const key = `${filter}|${debouncedSearch}`;
+      if (cacheRef.current[key] === undefined) {
+        void loadPage(0, "replace");
+      }
+    }, [filter, debouncedSearch, loadPage])
+  );
 
-  const filtered = useMemo(() => {
-    let list = words;
-    if (filter === "favorite") {
-      list = list.filter((w) => w.user_word?.is_favorite === true);
-    } else if (filter !== "all") {
-      const status = filter as WordStatus;
-      list = list.filter((w) => w.user_word?.status === status);
-    }
-    if (search.trim()) {
-      const s = search.trim().toLowerCase();
-      list = list.filter(
-        (w) =>
-          w.snapshot.word.toLowerCase().includes(s) ||
-          w.snapshot.partsOfSpeech.some((p) =>
-            p.meanings.some((m) => m.definition.toLowerCase().includes(s))
-          )
+  const onEndReached = useCallback(() => {
+    if (!isLoaded || loading || !hasMore) return;
+    void loadPage(currentPage + 1, "append");
+  }, [isLoaded, loading, hasMore, currentPage, loadPage]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadPage(0, "replace");
+    setRefreshing(false);
+  }, [loadPage]);
+
+  const handleDelete = useCallback(
+    (word: Word) => {
+      if (!word.user_word?.id) return;
+      const userWordId = word.user_word.id;
+      Alert.alert(
+        "단어 삭제",
+        `'${word.snapshot.word}' 단어를 삭제하시겠습니까?`,
+        [
+          { text: "취소", style: "cancel" },
+          {
+            text: "삭제",
+            style: "destructive",
+            onPress: () => {
+              setCache((prev) => {
+                const next: typeof prev = {};
+                for (const [k, v] of Object.entries(prev)) {
+                  next[k] = {
+                    ...v,
+                    words: v.words.filter((w) => w.id !== word.id),
+                  };
+                }
+                return next;
+              });
+              deleteUserWord(userWordId).catch((e: any) => {
+                console.warn("[ListScreen] deleteUserWord failed", e);
+                setError(e?.message ?? "단어를 삭제하지 못했습니다");
+                void loadPage(0, "replace");
+              });
+            },
+          },
+        ]
       );
-    }
-    return list;
-  }, [words, filter, search]);
+    },
+    [loadPage]
+  );
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.ink[50] }}>
       <AppHeader
         title="단어장"
-        subtitle={`${words.length}개의 단어`}
         big
         trailing={
           <>
@@ -260,7 +310,7 @@ export function ListScreen() {
                 size="sm"
                 icon="refresh"
                 onPress={() => {
-                  void fetchData();
+                  void loadPage(0, "replace");
                 }}
               >
                 다시 시도
@@ -273,7 +323,8 @@ export function ListScreen() {
       {/* List */}
       {!error && view === "list" ? (
         <FlatList
-          data={filtered}
+          ref={listRef}
+          data={words}
           keyExtractor={(w) => w.id}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110, gap: 10 }}
           renderItem={({ item }) => (
@@ -287,12 +338,31 @@ export function ListScreen() {
             />
           )}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<Empty filter={filter} search={search} />}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListFooterComponent={
+            loading && hasMore && words.length > 0 ? (
+              <View style={{ paddingVertical: 16 }}>
+                <ActivityIndicator color={colors.ink[400]} />
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            loading ? null : <Empty filter={filter} search={search} />
+          }
+          removeClippedSubviews
+          initialNumToRender={15}
+          maxToRenderPerBatch={15}
+          windowSize={10}
         />
       ) : !error && view === "grid" ? (
         <FlatList
+          ref={gridRef}
           key="grid"
-          data={filtered}
+          data={words}
           keyExtractor={(w) => w.id}
           numColumns={2}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110 }}
@@ -307,7 +377,25 @@ export function ListScreen() {
             />
           )}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<Empty filter={filter} search={search} />}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListFooterComponent={
+            loading && hasMore && words.length > 0 ? (
+              <View style={{ paddingVertical: 16 }}>
+                <ActivityIndicator color={colors.ink[400]} />
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            loading ? null : <Empty filter={filter} search={search} />
+          }
+          removeClippedSubviews
+          initialNumToRender={15}
+          maxToRenderPerBatch={15}
+          windowSize={10}
         />
       ) : null}
     </SafeAreaView>
